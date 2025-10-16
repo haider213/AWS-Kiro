@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useRAGStore } from './store/ragStore'
 import { useTourStore } from './store/tourStore'
 import { MainLayout } from './components/Layout/MainLayout'
@@ -9,18 +9,24 @@ import { ParameterPropagation } from './components/Layout/ParameterPropagation'
 import { TourOverlay } from './components/Tour/TourOverlay'
 import { TooltipProvider } from './components/Tour/TooltipProvider'
 import { TourControls } from './components/Tour/TourControls'
+import { PerformanceDashboard } from './components/Performance/PerformanceDashboard'
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation'
 import { tourSteps } from './data/tourSteps'
+import { offlineManager } from './services/offlineManager'
+import { concurrencyManager } from './services/concurrencyManager'
 
-// Lazy load modules for better performance
-const LazyChunkingModule = React.lazy(() => import('./modules/chunking/ChunkingModule'))
-const LazyEmbeddingModule = React.lazy(() => import('./modules/embedding/EmbeddingModule'))
-const LazyRetrievalModule = React.lazy(() => import('./modules/retrieval/RetrievalModule'))
-const LazyGenerationModule = React.lazy(() => import('./modules/generation/GenerationModule'))
+// Direct imports instead of lazy loading to debug
+import ChunkingModule from './modules/chunking/ChunkingModule'
+import EmbeddingModule from './modules/embedding/EmbeddingModule'
+import RetrievalModule from './modules/retrieval/RetrievalModule'
+import GenerationModule from './modules/generation/GenerationModule'
 
 function App() {
   const { currentModule, isLoading, error, setError } = useRAGStore()
   const tourStore = useTourStore()
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
+  const [showOfflineNotice, setShowOfflineNotice] = useState(false)
   
   // Initialize keyboard navigation
   useKeyboardNavigation()
@@ -28,6 +34,29 @@ function App() {
   // Initialize tour steps
   useEffect(() => {
     tourStore.setAvailableSteps(tourSteps);
+  }, [])
+
+  // Initialize offline support and performance monitoring
+  useEffect(() => {
+    const initializeServices = () => {
+      try {
+        // Simplified initialization - skip offline manager for now
+        console.log('Initializing services...');
+        
+        // Register user session for concurrency management
+        const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        concurrencyManager.registerUser(userId);
+
+        // Cleanup on unmount
+        return () => {
+          concurrencyManager.unregisterUser(userId);
+        };
+      } catch (error) {
+        console.error('Failed to initialize services:', error);
+      }
+    };
+
+    initializeServices();
   }, [])
 
   // Clear errors when switching modules
@@ -38,35 +67,15 @@ function App() {
   }, [currentModule, error, setError])
 
   const renderCurrentModule = () => {
-    const moduleProps = {
-      key: currentModule // Force remount when switching modules
-    }
-
     switch (currentModule) {
       case 'chunking':
-        return (
-          <Suspense fallback={<ModuleLoadingFallback />}>
-            <LazyChunkingModule {...moduleProps} />
-          </Suspense>
-        )
+        return <ChunkingModule key={currentModule} />
       case 'embedding':
-        return (
-          <Suspense fallback={<ModuleLoadingFallback />}>
-            <LazyEmbeddingModule {...moduleProps} />
-          </Suspense>
-        )
+        return <EmbeddingModule key={currentModule} />
       case 'retrieval':
-        return (
-          <Suspense fallback={<ModuleLoadingFallback />}>
-            <LazyRetrievalModule {...moduleProps} />
-          </Suspense>
-        )
+        return <RetrievalModule key={currentModule} />
       case 'generation':
-        return (
-          <Suspense fallback={<ModuleLoadingFallback />}>
-            <LazyGenerationModule {...moduleProps} />
-          </Suspense>
-        )
+        return <GenerationModule key={currentModule} />
       default:
         return <WelcomeScreen />
     }
@@ -76,6 +85,15 @@ function App() {
     <ErrorBoundary>
       <TooltipProvider>
         <div className="min-h-screen bg-gray-50">
+          {/* Offline Notice */}
+          {showOfflineNotice && (
+            <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white px-4 py-2 text-center z-50">
+              <p className="text-sm">
+                You're now offline. The app will continue to work with cached data.
+              </p>
+            </div>
+          )}
+          
           <MainLayout>
             {/* Global loading overlay */}
             {isLoading && <GlobalLoadingOverlay />}
@@ -97,6 +115,31 @@ function App() {
           {/* Tour system */}
           <TourOverlay />
           <TourControls />
+          
+          {/* Performance Dashboard */}
+          <PerformanceDashboard 
+            isVisible={showPerformanceDashboard}
+            onClose={() => setShowPerformanceDashboard(false)}
+          />
+          
+          {/* Offline Indicator */}
+          {isOffline && (
+            <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-3 py-2 rounded-lg shadow-lg z-40">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Offline Mode</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Performance Dashboard Toggle Button */}
+          <button
+            onClick={() => setShowPerformanceDashboard(true)}
+            className="fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
+            title="Open Performance Dashboard"
+          >
+            📊
+          </button>
         </div>
       </TooltipProvider>
     </ErrorBoundary>

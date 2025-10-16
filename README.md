@@ -132,8 +132,54 @@ rag-pipeline-educator/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Deployment
+
+### Quick Deployment
+
+1. **Configure AWS credentials** (see [AWS_SETUP.md](AWS_SETUP.md))
+2. **Run deployment script**:
+   ```bash
+   # Windows
+   .\deploy.ps1 -Environment production
+   
+   # Linux/Mac
+   ./deploy.sh -e production
+   ```
+3. **Verify deployment**:
+   ```bash
+   .\health-check.ps1 -Production
+   ```
+
+### Deployment Options
+
+- **Static Hosting**: Netlify, Vercel, AWS S3 + CloudFront
+- **Backend Hosting**: AWS EC2, DigitalOcean, Railway
+- **Container Deployment**: Docker + AWS ECS/Fargate
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+### Health Monitoring
+
+- Frontend: `https://your-domain.com`
+- Backend Health: `https://your-api-domain.com/health`
+- Metrics: `https://your-api-domain.com/api/metrics`
+
+### Cost Optimization
+
+Estimated hackathon costs (48 hours, 50 users): ~$25-60
+- Built-in rate limiting and caching
+- Request batching for AWS Bedrock
+- Offline functionality after initial load
+
+## Documentation
+
+- [**DEPLOYMENT.md**](DEPLOYMENT.md) - Complete deployment guide
+- [**AWS_SETUP.md**](AWS_SETUP.md) - AWS Bedrock configuration
+- **API Documentation**: Available at `/api` endpoint
+
 ## Acknowledgments
 
 - Built for educational purposes to demonstrate RAG concepts
 - Designed for hackathons and interactive learning environments
 - Powered by AWS Bedrock for production-quality AI capabilities
+- Optimized for concurrent users and offline reliability

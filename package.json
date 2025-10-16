@@ -6,12 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:prod": "cross-env NODE_ENV=production npm run build",
+    "build:staging": "cross-env NODE_ENV=staging npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
+    "preview:prod": "cross-env NODE_ENV=production vite preview",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "deploy:build": "npm run build:prod && npm run build:backend",
+    "build:backend": "cd backend && npm run build",
+    "start:backend": "cd backend && npm start",
+    "analyze": "npx vite-bundle-analyzer dist/stats.html"
   },
   "dependencies": {
     "@types/d3": "^7.4.0",
@@ -22,26 +29,28 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.4.3",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
+    "@vitest/coverage-v8": "^0.34.0",
+    "@vitest/ui": "^0.34.0",
     "autoprefixer": "^10.4.14",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "jsdom": "^22.1.0",
+    "msw": "^1.3.0",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
-    "vitest": "^0.34.0",
-    "@vitest/ui": "^0.34.0",
-    "@vitest/coverage-v8": "^0.34.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@testing-library/user-event": "^14.4.3",
-    "jsdom": "^22.1.0",
-    "msw": "^1.3.0"
+    "vitest": "^0.34.0"
   }
 }

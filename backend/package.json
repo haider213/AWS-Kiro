@@ -8,10 +8,15 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:prod": "NODE_ENV=production node dist/server.js",
+    "start:staging": "NODE_ENV=staging node dist/server.js",
     "lint": "eslint src --ext .ts",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "deploy:build": "npm run build",
+    "deploy:start": "npm run start:prod",
+    "health-check": "curl -f http://localhost:${PORT:-3001}/health || exit 1"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.400.0",

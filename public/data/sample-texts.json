@@ -1,0 +1,20 @@
+{
+  "texts": [
+    "Artificial intelligence is transforming how we process and understand information. Machine learning algorithms can identify patterns in large datasets that would be impossible for humans to detect manually.",
+    "Natural language processing enables computers to understand, interpret, and generate human language. This technology powers chatbots, translation services, and content analysis tools.",
+    "Deep learning models use neural networks with multiple layers to solve complex problems. These models excel at tasks like image recognition, speech processing, and language understanding.",
+    "Data science combines statistics, programming, and domain expertise to extract insights from data. It involves collecting, cleaning, analyzing, and visualizing data to support decision-making.",
+    "Retrieval-Augmented Generation (RAG) combines the power of large language models with external knowledge sources. This approach improves the accuracy and relevance of generated responses.",
+    "Vector databases store and retrieve high-dimensional embeddings efficiently. They enable semantic search and similarity matching for applications like recommendation systems and document retrieval.",
+    "Embedding models convert text into numerical vectors that capture semantic meaning. These vectors can be used to measure similarity between different pieces of text.",
+    "Chunking strategies determine how large documents are split into smaller, manageable pieces. Different approaches include fixed-size, semantic, and sentence-based chunking.",
+    "Similarity search finds the most relevant chunks based on vector distance metrics. Common approaches include cosine similarity, dot product, and Euclidean distance.",
+    "Context window management is crucial for language models with limited input capacity. Effective strategies include truncation, summarization, and selective chunk inclusion."
+  ],
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2024-01-01T00:00:00Z",
+    "totalTexts": 10,
+    "averageLength": 150
+  }
+}

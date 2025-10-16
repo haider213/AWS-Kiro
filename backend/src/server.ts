@@ -11,6 +11,8 @@ import modelsRouter from './routes/models.js'
 
 // Import middleware
 import { apiKeyAuth, requestLogger } from './middleware/auth.js'
+import { getCacheStats, clearCache } from './middleware/cache.js'
+import { requestTracking, getMetrics, resetMetrics, monitoringService } from './middleware/monitoring.js'
 
 // Load environment variables
 dotenv.config()
@@ -18,8 +20,9 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Request logging
+// Request logging and monitoring
 app.use(requestLogger())
+app.use(requestTracking)
 
 // Security middleware
 app.use(helmet())
@@ -53,6 +56,14 @@ app.use('/api/embeddings', embeddingsRouter)
 app.use('/api/generation', generationRouter)
 app.use('/api/models', modelsRouter)
 
+// Cache management endpoints
+app.get('/api/cache/stats', getCacheStats)
+app.post('/api/cache/clear', clearCache)
+
+// Monitoring endpoints
+app.get('/api/metrics', getMetrics)
+app.post('/api/metrics/reset', resetMetrics)
+
 // API info endpoint
 app.get('/api', (_req, res) => {
   res.json({ 
@@ -71,6 +82,10 @@ app.get('/api', (_req, res) => {
       models: {
         embedding: 'GET /api/models/embedding',
         generation: 'GET /api/models/generation',
+      },
+      cache: {
+        stats: 'GET /api/cache/stats',
+        clear: 'POST /api/cache/clear',
       },
     }
   })
@@ -94,4 +109,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
   console.log(`🔗 API info: http://localhost:${PORT}/api`)
+  console.log(`📈 Metrics: http://localhost:${PORT}/api/metrics`)
+  
+  // Start health monitoring
+  monitoringService.startHealthLogging()
 })
