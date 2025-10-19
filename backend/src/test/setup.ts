@@ -1,4 +1,4 @@
-import { beforeAll, afterEach, afterAll } from 'vitest'
+import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 
 // Mock AWS SDK
 const mockBedrockClient = {

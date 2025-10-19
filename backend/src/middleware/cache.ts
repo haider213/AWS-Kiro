@@ -242,27 +242,7 @@ class CacheService {
     return { ...this.performanceMetrics };
   }
 
-  // Enhanced eviction with better performance
-  private evictLeastRecentlyUsed(): void {
-    const entries = Array.from(this.cache.entries());
-    
-    // Sort by timestamp (oldest first) and access count (least accessed first)
-    entries.sort((a, b) => {
-      const timestampDiff = a[1].timestamp - b[1].timestamp;
-      if (timestampDiff !== 0) return timestampDiff;
-      return a[1].accessCount - b[1].accessCount;
-    });
 
-    // Remove oldest 20% of entries for better performance
-    const toRemove = Math.max(1, Math.floor(entries.length * 0.2));
-    
-    for (let i = 0; i < toRemove; i++) {
-      this.cache.delete(entries[i][0]);
-    }
-
-    console.log(`Evicted ${toRemove} cache entries to free up space`);
-    this.updateStats();
-  }
 
   // Batch operations for better performance
   setBatch(entries: Array<{ key: string; data: any; ttl?: number }>): void {
