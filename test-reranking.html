@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Reranking Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .results { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        .result-item { margin: 10px 0; padding: 10px; border: 1px solid #eee; border-radius: 4px; }
+        .rank { font-weight: bold; color: #666; }
+        .score { color: #007bff; font-weight: bold; }
+        .content { margin: 5px 0; font-size: 14px; }
+        .reranked { background-color: #fff3cd; border-color: #ffeaa7; }
+        .promoted { background-color: #d4edda; border-color: #c3e6cb; }
+        .demoted { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .query-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 RAG Reranking Demonstration</h1>
+        <p>This page demonstrates how different reranking methods affect search results in the RAG pipeline.</p>
+        
+        <div>
+            <input type="text" id="queryInput" class="query-input" placeholder="Enter your search query..." value="What are the benefits of RAG?">
+            <button onclick="testReranking()">Test Reranking</button>
+            <button onclick="testAllMethods()">Test All Methods</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:5000';
+        
+        async function searchWithMethod(query, method) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/search-chunks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: 5,
+                        similarity_metric: 'cosine',
+                        reranking_method: method
+                    })
+                });
+                
+                const data = await response.json();
+                return data.success ? data.results : [];
+            } catch (error) {
+                console.error('Search failed:', error);
+                return [];
+            }
+        }
+        
+        function renderResults(results, title, method) {
+            const container = document.createElement('div');
+            container.className = 'results';
+            
+            container.innerHTML = `
+                <h3>${title}</h3>
+                <p><strong>Method:</strong> ${method}</p>
+                ${results.map((result, index) => {
+                    const rankChange = result.initial_rank && result.initial_rank !== result.rank;
+                    const promoted = rankChange && result.initial_rank > result.rank;
+                    const demoted = rankChange && result.initial_rank < result.rank;
+                    
+                    let className = 'result-item';
+                    if (promoted) className += ' promoted';
+                    else if (demoted) className += ' demoted';
+                    else if (rankChange) className += ' reranked';
+                    
+                    return `
+                        <div class="${className}">
+                            <div class="rank">
+                                Rank #${result.rank || index + 1}
+                                ${result.initial_rank && result.initial_rank !== (result.rank || index + 1) ? 
+                                    `(was #${result.initial_rank})` : ''}
+                            </div>
+                            <div class="score">
+                                Similarity: ${(result.similarity_score * 100).toFixed(1)}%
+                                ${result.combined_score ? ` | Combined: ${(result.combined_score * 100).toFixed(1)}%` : ''}
+                            </div>
+                            ${result.keyword_score !== undefined ? `<div class="score">Keyword Score: ${result.keyword_score.toFixed(2)}</div>` : ''}
+                            ${result.bm25_score !== undefined ? `<div class="score">BM25 Score: ${result.bm25_score.toFixed(2)}</div>` : ''}
+                            ${result.diversity_score !== undefined ? `<div class="score">Diversity Score: ${result.diversity_score.toFixed(2)}</div>` : ''}
+                            <div class="content">${result.content.substring(0, 150)}...</div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+            
+            return container;
+        }
+        
+        async function testReranking() {
+            const query = document.getElementById('queryInput').value;
+            if (!query.trim()) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const [noneResults, keywordResults] = await Promise.all([
+                    searchWithMethod(query, 'none'),
+                    searchWithMethod(query, 'keyword_boost')
+                ]);
+                
+                resultsContainer.innerHTML = '';
+                resultsContainer.className = 'comparison';
+                
+                resultsContainer.appendChild(renderResults(noneResults, 'Original Ranking', 'No Reranking'));
+                resultsContainer.appendChild(renderResults(keywordResults, 'Keyword Boosted', 'keyword_boost'));
+                
+            } catch (error) {
+                resultsContainer.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function testAllMethods() {
+            const query = document.getElementById('queryInput').value;
+            if (!query.trim()) {
+                alert('Please enter a search query');
+                return;
+            }
+            
+            const methods = [
+                { id: 'none', name: 'No Reranking' },
+                { id: 'bm25', name: 'BM25 Hybrid' },
+                { id: 'keyword_boost', name: 'Keyword Boosting' },
+                { id: 'diversity', name: 'Diversity Reranking' },
+                { id: 'cross_encoder', name: 'Cross-Encoder' },
+                { id: 'length_penalty', name: 'Length Optimization' }
+            ];
+            
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '<p>Loading all methods...</p>';
+            resultsContainer.className = '';
+            
+            try {
+                const allResults = await Promise.all(
+                    methods.map(method => searchWithMethod(query, method.id))
+                );
+                
+                resultsContainer.innerHTML = '';
+                
+                methods.forEach((method, index) => {
+                    resultsContainer.appendChild(
+                        renderResults(allResults[index], method.name, method.id)
+                    );
+                });
+                
+            } catch (error) {
+                resultsContainer.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Test on page load
+        window.onload = () => testReranking();
+    </script>
+</body>
+</html>
+</text>

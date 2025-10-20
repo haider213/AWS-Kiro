@@ -1053,5 +1053,322 @@ def bedrock_status():
         }
     })
 
+@app.route('/api/evaluate-rag', methods=['POST'])
+def evaluate_rag():
+    """Evaluate RAG pipeline results using LLM-as-a-Judge"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+            
+        query = data.get('query', '')
+        retrieved_chunks = data.get('retrieved_chunks', [])
+        generated_response = data.get('generated_response', '')
+        evaluation_model = data.get('evaluation_model', 'anthropic.claude-3-haiku-20240307-v1:0')
+        
+        if not query.strip():
+            return jsonify({'error': 'Query is required'}), 400
+        
+        if not retrieved_chunks:
+            return jsonify({'error': 'Retrieved chunks are required'}), 400
+            
+        if not generated_response.strip():
+            return jsonify({'error': 'Generated response is required'}), 400
+        
+        if not bedrock_available:
+            return jsonify({'error': 'Bedrock is not available. Please configure AWS credentials.'}), 503
+        
+        # Prepare context from retrieved chunks
+        context = '\n\n'.join([f"Chunk {i+1}: {chunk.get('content', '')}" 
+                              for i, chunk in enumerate(retrieved_chunks)])
+        
+        # Create evaluation prompts for different aspects
+        evaluations = {}
+        
+        # 1. Relevance Evaluation
+        relevance_prompt = f"""You are an expert evaluator assessing the relevance of retrieved information for a RAG system.
+
+Query: {query}
+
+Retrieved Context:
+{context}
+
+Task: Evaluate how relevant the retrieved chunks are to answering the query.
+
+Rate the relevance on a scale of 1-5:
+1 = Not relevant at all
+2 = Slightly relevant 
+3 = Moderately relevant
+4 = Highly relevant
+5 = Perfectly relevant
+
+Provide your rating and a brief explanation (2-3 sentences).
+
+Format your response as:
+Rating: [1-5]
+Explanation: [Your explanation]"""
+
+        # 2. Completeness Evaluation
+        completeness_prompt = f"""You are an expert evaluator assessing the completeness of retrieved information for a RAG system.
+
+Query: {query}
+
+Retrieved Context:
+{context}
+
+Task: Evaluate whether the retrieved chunks contain sufficient information to fully answer the query.
+
+Rate the completeness on a scale of 1-5:
+1 = Missing critical information
+2 = Incomplete, major gaps
+3 = Adequate but some gaps
+4 = Mostly complete
+5 = Fully complete
+
+Provide your rating and a brief explanation (2-3 sentences).
+
+Format your response as:
+Rating: [1-5]
+Explanation: [Your explanation]"""
+
+        # 3. Answer Quality Evaluation
+        answer_quality_prompt = f"""You are an expert evaluator assessing the quality of AI-generated responses in a RAG system.
+
+Query: {query}
+
+Retrieved Context:
+{context}
+
+Generated Answer:
+{generated_response}
+
+Task: Evaluate the quality of the generated answer based on the retrieved context.
+
+Consider these criteria:
+- Accuracy: Is the answer factually correct based on the context?
+- Completeness: Does it fully address the query?
+- Clarity: Is it well-written and easy to understand?
+- Relevance: Does it stay focused on the query?
+
+Rate the answer quality on a scale of 1-5:
+1 = Poor quality (inaccurate, incomplete, unclear)
+2 = Below average quality
+3 = Average quality
+4 = Good quality
+5 = Excellent quality
+
+Provide your rating and a brief explanation (2-3 sentences).
+
+Format your response as:
+Rating: [1-5]
+Explanation: [Your explanation]"""
+
+        # 4. Faithfulness Evaluation
+        faithfulness_prompt = f"""You are an expert evaluator assessing the faithfulness of AI-generated responses to the source context.
+
+Query: {query}
+
+Retrieved Context:
+{context}
+
+Generated Answer:
+{generated_response}
+
+Task: Evaluate whether the generated answer is faithful to the retrieved context (no hallucination).
+
+Rate the faithfulness on a scale of 1-5:
+1 = Contains significant hallucinations or contradictions
+2 = Some inaccuracies or unsupported claims
+3 = Mostly faithful with minor issues
+4 = Highly faithful to the context
+5 = Perfectly faithful, no hallucinations
+
+Provide your rating and a brief explanation (2-3 sentences).
+
+Format your response as:
+Rating: [1-5]
+Explanation: [Your explanation]"""
+
+        # Execute evaluations
+        evaluation_prompts = {
+            'relevance': relevance_prompt,
+            'completeness': completeness_prompt,
+            'answer_quality': answer_quality_prompt,
+            'faithfulness': faithfulness_prompt
+        }
+        
+        for aspect, prompt in evaluation_prompts.items():
+            try:
+                evaluation_result = BedrockService.generate_text_bedrock(
+                    prompt=prompt,
+                    model_id=evaluation_model,
+                    max_tokens=500,
+                    temperature=0.1  # Low temperature for consistent evaluation
+                )
+                
+                # Parse the evaluation result
+                rating = None
+                explanation = ""
+                
+                lines = evaluation_result.strip().split('\n')
+                for line in lines:
+                    if line.startswith('Rating:'):
+                        try:
+                            rating = int(line.split(':')[1].strip().split()[0])
+                        except (ValueError, IndexError):
+                            rating = None
+                    elif line.startswith('Explanation:'):
+                        explanation = line.split(':', 1)[1].strip()
+                
+                evaluations[aspect] = {
+                    'rating': rating,
+                    'explanation': explanation,
+                    'raw_response': evaluation_result
+                }
+                
+            except Exception as e:
+                logger.error(f"Evaluation failed for {aspect}: {e}")
+                evaluations[aspect] = {
+                    'rating': None,
+                    'explanation': f"Evaluation failed: {str(e)}",
+                    'raw_response': ""
+                }
+        
+        # Calculate overall score
+        valid_ratings = [eval_data['rating'] for eval_data in evaluations.values() 
+                        if eval_data['rating'] is not None]
+        
+        overall_score = sum(valid_ratings) / len(valid_ratings) if valid_ratings else 0
+        
+        # Generate summary evaluation
+        summary_prompt = f"""You are an expert evaluator providing an overall assessment of a RAG system's performance.
+
+Query: {query}
+
+Individual Evaluation Scores:
+- Relevance: {evaluations['relevance']['rating']}/5 - {evaluations['relevance']['explanation']}
+- Completeness: {evaluations['completeness']['rating']}/5 - {evaluations['completeness']['explanation']}
+- Answer Quality: {evaluations['answer_quality']['rating']}/5 - {evaluations['answer_quality']['explanation']}
+- Faithfulness: {evaluations['faithfulness']['rating']}/5 - {evaluations['faithfulness']['explanation']}
+
+Overall Score: {overall_score:.1f}/5
+
+Task: Provide a concise overall assessment (3-4 sentences) summarizing the RAG system's performance and key strengths/weaknesses."""
+
+        try:
+            summary_evaluation = BedrockService.generate_text_bedrock(
+                prompt=summary_prompt,
+                model_id=evaluation_model,
+                max_tokens=300,
+                temperature=0.1
+            )
+        except Exception as e:
+            logger.error(f"Summary evaluation failed: {e}")
+            summary_evaluation = "Summary evaluation unavailable due to an error."
+        
+        return jsonify({
+            'success': True,
+            'evaluations': evaluations,
+            'overall_score': round(overall_score, 2),
+            'summary': summary_evaluation,
+            'evaluation_model': evaluation_model,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error evaluating RAG: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/evaluate-retrieval', methods=['POST'])
+def evaluate_retrieval():
+    """Evaluate just the retrieval quality (without generated response)"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+            
+        query = data.get('query', '')
+        retrieved_chunks = data.get('retrieved_chunks', [])
+        evaluation_model = data.get('evaluation_model', 'anthropic.claude-3-haiku-20240307-v1:0')
+        
+        if not query.strip():
+            return jsonify({'error': 'Query is required'}), 400
+        
+        if not retrieved_chunks:
+            return jsonify({'error': 'Retrieved chunks are required'}), 400
+        
+        if not bedrock_available:
+            return jsonify({'error': 'Bedrock is not available. Please configure AWS credentials.'}), 503
+        
+        # Prepare context from retrieved chunks
+        context = '\n\n'.join([f"Chunk {i+1}: {chunk.get('content', '')}" 
+                              for i, chunk in enumerate(retrieved_chunks)])
+        
+        # Evaluate retrieval quality
+        retrieval_prompt = f"""You are an expert evaluator assessing the quality of information retrieval for a RAG system.
+
+Query: {query}
+
+Retrieved Chunks:
+{context}
+
+Task: Evaluate the retrieval quality across multiple dimensions:
+
+1. Relevance: How relevant are the retrieved chunks to the query?
+2. Coverage: Do the chunks cover the key aspects needed to answer the query?
+3. Diversity: Do the chunks provide diverse perspectives or avoid redundancy?
+4. Ranking Quality: Are the most relevant chunks ranked higher?
+
+For each dimension, rate on a scale of 1-5 and provide brief reasoning.
+
+Format your response as:
+Relevance: [1-5] - [Brief explanation]
+Coverage: [1-5] - [Brief explanation]  
+Diversity: [1-5] - [Brief explanation]
+Ranking: [1-5] - [Brief explanation]
+Overall: [1-5] - [Overall assessment]"""
+
+        try:
+            evaluation_result = BedrockService.generate_text_bedrock(
+                prompt=retrieval_prompt,
+                model_id=evaluation_model,
+                max_tokens=600,
+                temperature=0.1
+            )
+            
+            # Parse the evaluation result
+            evaluations = {}
+            lines = evaluation_result.strip().split('\n')
+            
+            for line in lines:
+                for aspect in ['Relevance', 'Coverage', 'Diversity', 'Ranking', 'Overall']:
+                    if line.startswith(f'{aspect}:'):
+                        try:
+                            parts = line.split(':', 1)[1].strip().split(' - ', 1)
+                            rating = int(parts[0].strip())
+                            explanation = parts[1].strip() if len(parts) > 1 else ""
+                            evaluations[aspect.lower()] = {
+                                'rating': rating,
+                                'explanation': explanation
+                            }
+                        except (ValueError, IndexError):
+                            pass
+            
+            return jsonify({
+                'success': True,
+                'evaluations': evaluations,
+                'raw_response': evaluation_result,
+                'evaluation_model': evaluation_model,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"Retrieval evaluation failed: {e}")
+            return jsonify({'error': f'Evaluation failed: {str(e)}'}), 500
+        
+    except Exception as e:
+        logger.error(f"Error evaluating retrieval: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

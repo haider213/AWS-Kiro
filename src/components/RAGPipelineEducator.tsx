@@ -3,6 +3,7 @@ import ChunkingPhase from './phases/ChunkingPhase'
 import EmbeddingPhase from './phases/EmbeddingPhase'
 import RetrievalPhase from './phases/RetrievalPhase'
 import GenerationPhase from './phases/GenerationPhase'
+import EvaluationPhase from './phases/EvaluationPhase'
 
 interface DocumentChunk {
   id: string
@@ -12,6 +13,14 @@ interface DocumentChunk {
   strategy: string
   similarity_score?: number
   rank?: number
+  initial_rank?: number
+  combined_score?: number
+  bm25_score?: number
+  keyword_score?: number
+  diversity_score?: number
+  length_score?: number
+  cross_encoder_score?: number
+  chunk_index?: number
 }
 
 interface EmbeddingData {
@@ -21,6 +30,27 @@ interface EmbeddingData {
   method: string
   model_id: string
   dimensions: number
+}
+
+interface EvaluationResult {
+  rating: number | null
+  explanation: string
+  raw_response: string
+}
+
+interface RAGEvaluation {
+  relevance: EvaluationResult
+  completeness: EvaluationResult
+  answer_quality: EvaluationResult
+  faithfulness: EvaluationResult
+}
+
+interface RetrievalEvaluation {
+  relevance: EvaluationResult
+  coverage: EvaluationResult
+  diversity: EvaluationResult
+  ranking: EvaluationResult
+  overall: EvaluationResult
 }
 
 const RAGPipelineEducator: React.FC = () => {
@@ -61,7 +91,15 @@ This educational tool demonstrates each phase of the RAG pipeline with interacti
   const [embeddingModel, setEmbeddingModel] = useState('amazon.titan-embed-text-v1')
   const [similarityMetric, setSimilarityMetric] = useState<'cosine' | 'euclidean' | 'dot_product'>('cosine')
   const [rerankingMethod, setRerankingMethod] = useState('none')
+  const [showComparison, setShowComparison] = useState(false)
+  const [comparisonResults, setComparisonResults] = useState<DocumentChunk[]>([])
   const [generationModel, setGenerationModel] = useState('anthropic.claude-3-haiku-20240307-v1:0')
+
+  // Evaluation state
+  const [ragEvaluation, setRagEvaluation] = useState<RAGEvaluation | null>(null)
+  const [retrievalEvaluation, setRetrievalEvaluation] = useState<RetrievalEvaluation | null>(null)
+  const [overallScore, setOverallScore] = useState<number | null>(null)
+  const [evaluationSummary, setEvaluationSummary] = useState('')
 
   // UI state
   const [isProcessing, setIsProcessing] = useState(false)
@@ -118,6 +156,7 @@ This educational tool demonstrates each phase of the RAG pipeline with interacti
     setError('')
     
     try {
+      // Get results with current reranking method
       const response = await fetch(`${BACKEND_URL}/api/search-chunks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,7 +171,34 @@ This educational tool demonstrates each phase of the RAG pipeline with interacti
       const data = await response.json()
       
       if (data.success) {
+        console.log('Search results received:', data.results)
+        console.log('Reranking method used:', data.reranking_method)
         setRetrievedChunks(data.results)
+        
+        // If reranking is enabled, also get comparison results without reranking
+        if (rerankingMethod !== 'none') {
+          try {
+            const comparisonResponse = await fetch(`${BACKEND_URL}/api/search-chunks`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query: query,
+                top_k: 3,
+                similarity_metric: similarityMetric,
+                reranking_method: 'none'
+              })
+            })
+            
+            const comparisonData = await comparisonResponse.json()
+            if (comparisonData.success) {
+              setComparisonResults(comparisonData.results)
+            }
+          } catch (compErr) {
+            console.warn('Failed to get comparison results:', compErr)
+          }
+        } else {
+          setComparisonResults([])
+        }
       } else {
         throw new Error(data.error || 'Failed to search chunks')
       }
@@ -181,11 +247,87 @@ Answer:`
       
       if (data.success) {
         setGeneratedResponse(data.generated_text)
+        // Clear previous evaluations when new response is generated
+        setRagEvaluation(null)
+        setRetrievalEvaluation(null)
+        setOverallScore(null)
+        setEvaluationSummary('')
       } else {
         throw new Error(data.error || 'Generation failed')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate response')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const evaluateRAG = async () => {
+    if (!query.trim() || retrievedChunks.length === 0 || !generatedResponse.trim()) {
+      setError('Please complete retrieval and generation phases first')
+      return
+    }
+
+    setIsProcessing(true)
+    setError('')
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/evaluate-rag`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query,
+          retrieved_chunks: retrievedChunks,
+          generated_response: generatedResponse,
+          evaluation_model: generationModel
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setRagEvaluation(data.evaluations)
+        setOverallScore(data.overall_score)
+        setEvaluationSummary(data.summary)
+      } else {
+        throw new Error(data.error || 'Evaluation failed')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate RAG pipeline')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const evaluateRetrieval = async () => {
+    if (!query.trim() || retrievedChunks.length === 0) {
+      setError('Please complete retrieval phase first')
+      return
+    }
+
+    setIsProcessing(true)
+    setError('')
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/evaluate-retrieval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query,
+          retrieved_chunks: retrievedChunks,
+          evaluation_model: generationModel
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setRetrievalEvaluation(data.evaluations)
+      } else {
+        throw new Error(data.error || 'Evaluation failed')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate retrieval')
     } finally {
       setIsProcessing(false)
     }
@@ -202,7 +344,7 @@ Answer:`
           </p>
           
           {/* Pipeline Progress */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="bg-white/10 rounded-lg p-3 text-center">
               <div className="text-2xl font-bold">{processedChunks.length}</div>
               <div className="text-xs text-blue-200">Document Chunks</div>
@@ -218,6 +360,10 @@ Answer:`
             <div className="bg-white/10 rounded-lg p-3 text-center">
               <div className="text-2xl font-bold">{generatedResponse ? '1' : '0'}</div>
               <div className="text-xs text-blue-200">AI Response</div>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold">{overallScore ? overallScore.toFixed(1) : '0'}</div>
+              <div className="text-xs text-blue-200">Evaluation Score</div>
             </div>
           </div>
         </div>
@@ -276,6 +422,9 @@ Answer:`
           onRerankingMethodChange={setRerankingMethod}
           onPerformRetrieval={performRetrieval}
           isProcessing={isProcessing}
+          comparisonResults={comparisonResults}
+          showComparison={showComparison}
+          onShowComparisonChange={setShowComparison}
         />
 
         {/* Phase 4: Response Generation */}
@@ -287,6 +436,20 @@ Answer:`
           generatedResponse={generatedResponse}
           onGenerateResponse={generateResponse}
           isProcessing={isProcessing}
+        />
+
+        {/* Phase 5: LLM-as-a-Judge Evaluation */}
+        <EvaluationPhase
+          query={query}
+          retrievedChunks={retrievedChunks}
+          generatedResponse={generatedResponse}
+          onEvaluateRAG={evaluateRAG}
+          onEvaluateRetrieval={evaluateRetrieval}
+          isProcessing={isProcessing}
+          ragEvaluation={ragEvaluation}
+          retrievalEvaluation={retrievalEvaluation}
+          overallScore={overallScore}
+          evaluationSummary={evaluationSummary}
         />
       </div>
     </div>
