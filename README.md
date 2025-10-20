@@ -1,126 +1,226 @@
-# RAG Pipeline Educator
+# 🚀 RAG Pipeline Educator
 
-An interactive web application designed to teach Retrieval-Augmented Generation (RAG) concepts through hands-on simulations and visualizations.
+An interactive educational platform for learning Retrieval-Augmented Generation (RAG) systems through hands-on experimentation and comprehensive visualizations.
 
-## Features
+## 🚀 Quick Start
 
-- **Interactive Chunking Module**: Experiment with different text segmentation strategies
-- **Embedding Visualization**: Visualize vector representations and similarity relationships
-- **Retrieval Demonstration**: Explore query matching and ranking mechanisms
-- **Generation Simulation**: See how retrieved context affects response generation
-- **Real-time Parameter Adjustment**: Modify algorithm settings and see immediate effects
-- **Educational Tooltips**: Learn concepts through guided explanations
-
-## Tech Stack
-
-### Frontend
-- **React 18** with TypeScript for component-based architecture
-- **Vite** for fast development and optimized builds
-- **Tailwind CSS** for responsive styling
-- **Zustand** for state management
-- **D3.js** for interactive visualizations
-
-### Backend
-- **Node.js/Express** API server
-- **AWS Bedrock** integration for embeddings and text generation
-- **TypeScript** for type safety
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- AWS account with Bedrock access (for full functionality)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd rag-pipeline-educator
-   ```
-
-2. **Install frontend dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Install backend dependencies**
-   ```bash
-   cd backend
-   npm install
-   ```
-
-4. **Configure environment variables**
-   ```bash
-   # In backend directory
-   cp .env.example .env
-   # Edit .env with your AWS credentials
-   ```
-
-### Development
-
-1. **Start the backend server**
-   ```bash
-   cd backend
-   npm run dev
-   ```
-
-2. **Start the frontend development server**
-   ```bash
-   # In root directory
-   npm run dev
-   ```
-
-3. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-### Building for Production
-
+### 🎯 One-Command Launch (Recommended)
 ```bash
-# Build frontend
-npm run build
-
-# Build backend
-cd backend
-npm run build
+git clone <repository-url>
+cd rag-pipeline-educator
+./run-rag-app.sh
 ```
 
-## Project Structure
+### ⚡ Quick Start (Simple)
+```bash
+./quick-start.sh
+```
+
+### 🪟 Windows Users
+```cmd
+run-rag-app.bat
+```
+
+### 🛠️ Manual Setup
+```bash
+# 1. Install dependencies
+npm install
+cd python_backend && pip install -r requirements.txt
+
+# 2. Configure AWS (optional)
+cp python_backend/.env.example python_backend/.env
+# Edit .env with your AWS credentials
+
+# 3. Start services
+./run-rag-app.sh
+```
+
+### 🌐 Access Points
+- **Frontend Application**: http://localhost:3000
+- **Python Backend API**: http://localhost:5000
+- **Health Check**: http://localhost:5000/health
+
+## ✨ Features
+
+### 📄 **Phase 1: Document Chunking**
+- Multiple chunking strategies (sentence-based, fixed-size, paragraph-based, semantic-based)
+- Interactive parameter controls and real-time visualization
+- Chunk distribution analysis and statistics
+
+### 🔢 **Phase 2: Vector Embeddings** 
+- Amazon Bedrock embedding models (Titan, Cohere)
+- t-SNE visualization and similarity matrix heatmaps
+- Advanced settings for dimensions, normalization, and pooling
+
+### 🔍 **Phase 3: Information Retrieval**
+- Multiple similarity metrics (cosine, euclidean, dot product)
+- Advanced retrieval settings with reranking and hybrid search
+- Interactive query visualization in vector space
+
+### 🤖 **Phase 4: Response Generation**
+- Bedrock model selection (Claude 3 variants, Titan, Jamba, Llama)
+- System prompt templates and generation parameter controls
+- Prompt flow visualization and response analysis
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS + D3.js
+- **Backend**: Node.js + Express + TypeScript
+- **Python Services**: Flask + scikit-learn + NLTK + NumPy + Pandas
+- **AI Models**: Amazon Bedrock (Claude, Titan, Cohere, Meta Llama)
+- **Visualizations**: D3.js + custom React components
+
+## 🚀 Quick Start
+
+### One-Command Setup
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd rag-pipeline-educator
+
+# Run the comprehensive startup script
+./start-rag-pipeline.sh
+```
+
+That's it! The script will:
+- ✅ Check system requirements
+- ✅ Set up Python virtual environment
+- ✅ Install all dependencies
+- ✅ Start all services (Frontend, Python Backend, Node.js Backend)
+- ✅ Verify everything is working
+
+### Manual Setup (if needed)
+
+1. **Clean up any previous installations**
+   ```bash
+   ./cleanup-unused-files.sh
+   ```
+
+2. **System Requirements**
+   - Node.js 18+ 
+   - Python 3.8+
+   - npm or yarn
+
+3. **Run the startup script**
+   ```bash
+   ./start-rag-pipeline.sh
+   ```
+
+## 🌐 Access Points
+
+Once started, access the application at:
+
+- **🌐 Frontend**: http://localhost:3000 (Main RAG Pipeline Interface)
+- **🐍 Python Backend**: http://localhost:5000 (Document Processing & Embeddings)
+- **📊 Node.js Backend**: http://localhost:3001 (AI Generation & Models)
+
+## 📁 Project Structure
 
 ```
 rag-pipeline-educator/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── Layout/         # Layout components (Header, Navigation)
-│   │   └── UI/             # Basic UI components (Card, LoadingSpinner)
-│   ├── modules/            # RAG pipeline modules
-│   │   ├── chunking/       # Text chunking module
-│   │   ├── embedding/      # Vector embedding module
-│   │   ├── retrieval/      # Information retrieval module
-│   │   └── generation/     # Response generation module
-│   ├── store/              # Zustand state management
-│   ├── utils/              # Utility functions
-│   └── types/              # TypeScript type definitions
-├── backend/
+├── 🚀 start-rag-pipeline.sh          # One-command startup script
+├── 🧹 cleanup-unused-files.sh        # Cleanup script
+├── src/                               # Frontend React application
+│   ├── components/
+│   │   ├── ComprehensiveRAGPipeline.tsx    # Main pipeline orchestrator
+│   │   ├── phases/                         # Individual phase components
+│   │   │   ├── ChunkingPhase.tsx          # Document chunking interface
+│   │   │   ├── EmbeddingPhase.tsx         # Vector embedding controls
+│   │   │   ├── RetrievalPhase.tsx         # Information retrieval
+│   │   │   └── GenerationPhase.tsx        # Response generation
+│   │   ├── ChunkingVisualization.tsx      # Chunking visualizations
+│   │   ├── EmbeddingVisualization.tsx     # Embedding visualizations
+│   │   ├── SimpleQueryingVisualization.tsx # Query visualizations
+│   │   └── SystemPromptVisualization.tsx   # Prompt flow analysis
+│   └── SimpleApp.tsx                      # Main app entry point
+├── backend/                               # Node.js backend
 │   ├── src/
-│   │   ├── routes/         # API route handlers
-│   │   ├── services/       # Business logic services
-│   │   ├── middleware/     # Express middleware
-│   │   └── types/          # Backend type definitions
-│   └── dist/               # Compiled JavaScript
-└── public/                 # Static assets
+│   │   ├── routes/                        # API routes
+│   │   └── services/                      # Backend services
+│   └── package.json
+├── python_backend/                        # Python Flask backend
+│   ├── app.py                            # Main Flask application
+│   └── requirements.txt                   # Python dependencies
+└── package.json                          # Frontend dependencies
 ```
 
-## Usage
+## 🔧 Development
 
-1. **Navigate between modules** using the top navigation
-2. **Adjust parameters** using the interactive controls
-3. **Observe real-time changes** in visualizations
-4. **Follow the guided tour** for structured learning
-5. **Experiment with different configurations** to understand RAG concepts
+### Frontend Development
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run lint         # Run ESLint
+npm run test         # Run tests
+```
 
-## Contributing
+### Backend Development
+```bash
+cd backend
+npm run dev          # Start with hot reload (if Node.js backend works)
+```
+
+### Python Backend Development
+```bash
+cd python_backend
+source venv_clean/bin/activate
+python3 app.py       # Start Flask development server
+```
+
+## 🔌 API Endpoints
+
+### Python Backend (Port 5000)
+- `GET /health` - Health check
+- `POST /api/process-document` - Process and chunk documents
+- `POST /api/search-chunks` - Search through processed chunks  
+- `GET /api/chunk-strategies` - Get available chunking strategies
+- `GET /api/embedding-stats` - Get embedding statistics
+
+### Node.js Backend (Port 3001) - Optional
+- `GET /health` - Health check
+- `POST /api/generation/response` - Generate AI responses
+- `GET /api/models/embedding` - Get available embedding models
+- `GET /api/models/generation` - Get available generation models
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+The startup script handles most configuration automatically. For custom setups:
+
+**Root `.env`:**
+```env
+VITE_API_URL=http://localhost:3001
+VITE_PYTHON_API_URL=http://localhost:5000
+```
+
+**Backend `.env`:**
+```env
+PORT=3001
+AWS_REGION=us-east-1
+# Add your AWS credentials for Bedrock access
+```
+
+## 🎯 Usage Guide
+
+1. **Start with Document Chunking**: Upload or paste text to see different chunking strategies
+2. **Explore Embeddings**: Visualize how text becomes vectors with t-SNE plots
+3. **Test Retrieval**: Query your documents and see similarity matching in action
+4. **Generate Responses**: Use retrieved context to generate AI responses
+
+## 🧹 Maintenance
+
+### Clean Installation
+```bash
+./cleanup-unused-files.sh  # Remove old files and dependencies
+./start-rag-pipeline.sh    # Fresh installation and startup
+```
+
+### Stop Services
+Press `Ctrl+C` in the terminal running the startup script to stop all services.
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -128,58 +228,10 @@ rag-pipeline-educator/
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Deployment
+---
 
-### Quick Deployment
-
-1. **Configure AWS credentials** (see [AWS_SETUP.md](AWS_SETUP.md))
-2. **Run deployment script**:
-   ```bash
-   # Windows
-   .\deploy.ps1 -Environment production
-   
-   # Linux/Mac
-   ./deploy.sh -e production
-   ```
-3. **Verify deployment**:
-   ```bash
-   .\health-check.ps1 -Production
-   ```
-
-### Deployment Options
-
-- **Static Hosting**: Netlify, Vercel, AWS S3 + CloudFront
-- **Backend Hosting**: AWS EC2, DigitalOcean, Railway
-- **Container Deployment**: Docker + AWS ECS/Fargate
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
-
-### Health Monitoring
-
-- Frontend: `https://your-domain.com`
-- Backend Health: `https://your-api-domain.com/health`
-- Metrics: `https://your-api-domain.com/api/metrics`
-
-### Cost Optimization
-
-Estimated hackathon costs (48 hours, 50 users): ~$25-60
-- Built-in rate limiting and caching
-- Request batching for AWS Bedrock
-- Offline functionality after initial load
-
-## Documentation
-
-- [**DEPLOYMENT.md**](DEPLOYMENT.md) - Complete deployment guide
-- [**AWS_SETUP.md**](AWS_SETUP.md) - AWS Bedrock configuration
-- **API Documentation**: Available at `/api` endpoint
-
-## Acknowledgments
-
-- Built for educational purposes to demonstrate RAG concepts
-- Designed for hackathons and interactive learning environments
-- Powered by AWS Bedrock for production-quality AI capabilities
-- Optimized for concurrent users and offline reliability
+**🎉 Ready to explore RAG systems? Run `./start-rag-pipeline.sh` and visit http://localhost:3000!**

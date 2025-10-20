@@ -1,54 +1,274 @@
-# Logs
-logs
-*.log
+# ================================
+# RAG Pipeline Educator - .gitignore
+# ================================
+
+# ===== SECURITY & CREDENTIALS =====
+# AWS Credentials and API Keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+aws-credentials.json
+credentials.json
+config.json
+
+# Python Backend Environment Files
+python_backend/.env
+python_backend/.env.*
+python_backend/credentials/
+python_backend/secrets/
+
+# AWS CLI Configuration
+.aws/
+aws-config
+aws-credentials
+
+# API Keys and Tokens
+api-keys.txt
+tokens.txt
+secrets.txt
+*.secret
+
+# ===== DEPENDENCIES & PACKAGES =====
+# Node.js
+node_modules/
+*/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# Dependencies
-node_modules
-*/node_modules
-dist
-dist-ssr
-*.local
+# Python
+python_backend/venv/
+python_backend/venv_*/
+python_backend/__pycache__/
+python_backend/*.pyc
+python_backend/*.pyo
+python_backend/*.pyd
+python_backend/.Python
+python_backend/pip-log.txt
+python_backend/pip-delete-this-directory.txt
+python_backend/.pytest_cache/
+python_backend/.coverage
+python_backend/htmlcov/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# ===== BUILD OUTPUTS =====
+# Frontend Build
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.vite/
+.cache/
 
-# Environment variables
-.env
+# Backend Build
+backend/dist/
+backend/build/
+python_backend/dist/
+python_backend/build/
+
+# ===== LOGS & DEBUGGING =====
+# Application Logs
+logs/
+*.log
+*.log.*
+debug.log
+error.log
+access.log
+app.log
+
+# Python Logs
+python_backend/logs/
+python_backend/*.log
+
+# ===== DEVELOPMENT & TESTING =====
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+test-results.xml
+
+# Development Files
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.local
 
-# Build outputs
-build/
-dist/
-backend/dist/
+# Temporary Files
+tmp/
+temp/
+.tmp/
+.temp/
 
-# OS generated files
-Thumbs.db
-.DS_Store
+# ===== EDITOR & IDE =====
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 
-# IDE files
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+.vim/
 
-# Coverage reports
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== OS GENERATED =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== LANGUAGE SPECIFIC =====
+# TypeScript
+*.tsbuildinfo
+.tsbuildinfo
+
+# JavaScript
+.eslintcache
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ===== PROJECT SPECIFIC =====
+# RAG Pipeline Data
+data/
+datasets/
+documents/
+embeddings/
+models/
+checkpoints/
+
+# Generated Files
+generated/
+output/
+results/
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache Files
+.cache/
+*.cache
+.parcel-cache/
+
+# Runtime Files
+*.pid
+*.seed
+*.pid.lock
+
+# ===== DEPLOYMENT =====
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ===== BACKUP & ARCHIVE =====
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*.tmp
+
+# Archive Files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ===== DOCUMENTATION =====
+# Generated Documentation
+docs/build/
+site/
+
+# ===== MONITORING & ANALYTICS =====
+# Performance Monitoring
+.nyc_output/
 coverage/
 *.lcov
 
-# TypeScript
-*.tsbuildinfo
+# Error Tracking
+.sentry-*
+
+# ===== CUSTOM EXCLUSIONS =====
+# Add any project-specific files to ignore here
+# Example:
+# my-custom-config.json
+# local-development-files/
