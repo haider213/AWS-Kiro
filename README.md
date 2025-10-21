@@ -505,10 +505,48 @@ Press `Ctrl+C` in the terminal running the startup script to stop all services.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## ☁️ AWS Deployment
+
+Deploy the RAG Pipeline Educator on AWS for production use:
+
+### Quick AWS Deployment
+```bash
+# One-command AWS deployment
+./deploy-aws.sh
+```
+
+### Deployment Options
+- **EC2 Instance**: Simple VM deployment with CloudFormation
+- **ECS Fargate**: Containerized deployment with auto-scaling
+- **App Runner**: Fully managed serverless deployment
+- **Lambda**: Serverless backend with API Gateway
+
+See [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md) for detailed instructions.
+
+## 🐳 Docker Deployment
+
+### Local Docker
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Access application
+open http://localhost:3000
+```
+
+### Production Docker
+```bash
+# Use production profile with Nginx
+docker-compose --profile production up -d
+```
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**🎉 Ready to explore RAG systems? Run `./start-rag-pipeline.sh` and visit http://localhost:3000!**
+**🎉 Ready to explore RAG systems?**
+- **Local**: Run `./run-rag-app.sh` and visit http://localhost:3000
+- **AWS**: Run `./deploy-aws.sh` for cloud deployment
+- **Docker**: Run `docker-compose up -d` for containerized setup

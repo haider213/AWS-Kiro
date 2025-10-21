@@ -1,0 +1,301 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'RAG Pipeline Educator - Complete AWS Infrastructure'
+
+Parameters:
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+    
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t3.small
+      - t3.medium
+      - t3.large
+      - c5.large
+    Description: EC2 instance type
+    
+  GitHubRepo:
+    Type: String
+    Default: https://github.com/your-username/rag-pipeline-educator.git
+    Description: GitHub repository URL
+
+Resources:
+  # VPC and Networking
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-VPC
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-Public-Subnet
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-IGW
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-Public-RT
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Group
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RAG Pipeline Educator
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH access
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+          Description: Frontend application
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+          Description: Backend API
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP access
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-SG
+
+  # IAM Role for EC2
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: RAGPipelinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:ListFoundationModels
+                  - bedrock:GetFoundationModel
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/rag-pipeline/*'
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-EC2-Role
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # CloudWatch Log Group
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/rag-pipeline
+      RetentionInDays: 7
+
+  # EC2 Instance
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 (update as needed)
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          
+          # Install Node.js 18
+          curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+          yum install -y nodejs
+          
+          # Install Python 3.9 and development tools
+          yum install -y python3 python3-pip python3-devel gcc g++ git curl
+          
+          # Install Docker (optional for containerized deployment)
+          yum install -y docker
+          systemctl start docker
+          systemctl enable docker
+          usermod -a -G docker ec2-user
+          
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          # Clone repository
+          cd /home/ec2-user
+          git clone ${GitHubRepo}
+          chown -R ec2-user:ec2-user rag-pipeline-educator
+          
+          # Setup application
+          cd rag-pipeline-educator
+          
+          # Create .env file with AWS region
+          echo "AWS_REGION=${AWS::Region}" > python_backend/.env
+          echo "FLASK_ENV=production" >> python_backend/.env
+          
+          # Make scripts executable
+          chmod +x run-rag-app.sh
+          chmod +x quick-start.sh
+          
+          # Install and start application as ec2-user
+          sudo -u ec2-user bash -c 'cd /home/ec2-user/rag-pipeline-educator && ./run-rag-app.sh'
+          
+          # Install PM2 for process management
+          npm install -g pm2
+          
+          # Create PM2 ecosystem file
+          cat > /home/ec2-user/rag-pipeline-educator/ecosystem.config.js << 'EOF'
+          module.exports = {
+            apps: [
+              {
+                name: 'rag-frontend',
+                script: 'npm',
+                args: 'run dev',
+                cwd: '/home/ec2-user/rag-pipeline-educator',
+                env: {
+                  NODE_ENV: 'production',
+                  PORT: 3000
+                }
+              },
+              {
+                name: 'rag-backend',
+                script: 'python3',
+                args: 'app.py',
+                cwd: '/home/ec2-user/rag-pipeline-educator/python_backend',
+                interpreter: '/home/ec2-user/rag-pipeline-educator/python_backend/venv_clean/bin/python',
+                env: {
+                  FLASK_ENV: 'production',
+                  AWS_REGION: '${AWS::Region}'
+                }
+              }
+            ]
+          };
+          EOF
+          
+          # Start services with PM2
+          sudo -u ec2-user bash -c 'cd /home/ec2-user/rag-pipeline-educator && pm2 start ecosystem.config.js && pm2 save && pm2 startup'
+          
+          # Signal CloudFormation that setup is complete
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EC2Instance --region ${AWS::Region}
+      CreationPolicy:
+        ResourceSignal:
+          Count: 1
+          Timeout: PT15M
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-Educator
+        - Key: Project
+          Value: RAG-Pipeline-Educator
+
+  # Elastic IP (optional)
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref EC2Instance
+      Tags:
+        - Key: Name
+          Value: RAG-Pipeline-EIP
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the EC2 instance
+    Value: !Ref EC2Instance
+    
+  InstancePublicIP:
+    Description: Public IP address of the EC2 instance
+    Value: !Ref ElasticIP
+    
+  FrontendURL:
+    Description: URL to access the frontend application
+    Value: !Sub 'http://${ElasticIP}:3000'
+    
+  BackendURL:
+    Description: URL to access the backend API
+    Value: !Sub 'http://${ElasticIP}:5000'
+    
+  HealthCheckURL:
+    Description: URL to check backend health
+    Value: !Sub 'http://${ElasticIP}:5000/health'
+    
+  SSHCommand:
+    Description: SSH command to connect to the instance
+    Value: !Sub 'ssh -i ${KeyPairName}.pem ec2-user@${ElasticIP}'
+    
+  RetrievalDemoURL:
+    Description: URL to access the reranking demo
+    Value: !Sub 'http://${ElasticIP}:3000/test-reranking.html'
