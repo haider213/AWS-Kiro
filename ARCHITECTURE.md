@@ -6,88 +6,88 @@
 graph TB
     %% User Interface Layer
     subgraph "Frontend Layer"
-        UI[🌐 React Frontend<br/>TypeScript + Vite + Tailwind]
-        DEMO[🧪 Demo Pages<br/>test-reranking.html]
+        UI[🌐 React Frontend|TypeScript + Vite + Tailwind]
+        DEMO[🧪 Demo Pages|test-reranking.html]
     end
 
     %% Application Layer
     subgraph "Backend Services"
-        API[🐍 Python Flask API<br/>Port 5000]
-        ROUTES[📡 API Routes<br/>/api/process-document<br/>/api/search-chunks<br/>/api/evaluate-rag]
+        API[🐍 Python Flask API|Port 5000]
+        ROUTES[📡 API Routes|/api/process-document|/api/search-chunks|/api/evaluate-rag]
     end
 
     %% RAG Pipeline Components
     subgraph "RAG Pipeline Core"
         subgraph "Phase 1: Document Processing"
-            CHUNK[📄 Document Chunker<br/>4 Strategies:<br/>• Sentence-based<br/>• Fixed-size<br/>• Paragraph<br/>• Semantic]
+            CHUNK[📄 Document Chunker|4 Strategies:|• Sentence-based|• Fixed-size|• Paragraph|• Semantic]
         end
         
         subgraph "Phase 2: Vector Embeddings"
-            EMB[🔢 Embedding Generator<br/>AWS Bedrock Models:<br/>• Titan v1 (1536D)<br/>• Titan v2 (1024D)<br/>• Cohere v3 (1024D)]
+            EMB[🔢 Embedding Generator|AWS Bedrock Models:|• Titan v1 1536D|• Titan v2 1024D|• Cohere v3 1024D]
         end
         
         subgraph "Phase 3: Information Retrieval"
-            SEARCH[🔍 Similarity Search<br/>Metrics:<br/>• Cosine<br/>• Euclidean<br/>• Dot Product]
-            RERANK[🔄 Reranking Engine<br/>6 Methods:<br/>• BM25 Hybrid<br/>• Cross-Encoder<br/>• Diversity<br/>• Length Penalty<br/>• Keyword Boost<br/>• None]
+            SEARCH[🔍 Similarity Search|Metrics:|• Cosine|• Euclidean|• Dot Product]
+            RERANK[🔄 Reranking Engine|6 Methods:|• BM25 Hybrid|• Cross-Encoder|• Diversity|• Length Penalty|• Keyword Boost|• None]
         end
         
         subgraph "Phase 4: Response Generation"
-            GEN[🤖 AI Generator<br/>AWS Bedrock Models:<br/>• Claude 3 Haiku<br/>• Claude 3 Sonnet<br/>• Titan Premier]
+            GEN[🤖 AI Generator|AWS Bedrock Models:|• Claude 3 Haiku|• Claude 3 Sonnet|• Titan Premier]
         end
         
         subgraph "Phase 5: Evaluation"
-            EVAL[⚖️ LLM-as-a-Judge<br/>Claude 3 Evaluator<br/>4 Dimensions:<br/>• Relevance<br/>• Completeness<br/>• Quality<br/>• Faithfulness]
+            EVAL[⚖️ LLM-as-a-Judge|Claude 3 Evaluator|4 Dimensions:|• Relevance|• Completeness|• Quality|• Faithfulness]
         end
     end
 
     %% AI Services Layer
     subgraph "AWS Bedrock Services"
-        BEDROCK[☁️ AWS Bedrock<br/>us-east-1]
+        BEDROCK[☁️ AWS Bedrock|us-east-1]
         
         subgraph "Embedding Models"
-            TITAN1[🔹 Titan Text v1<br/>1536 dimensions]
-            TITAN2[🔹 Titan Text v2<br/>1024 dimensions]
-            COHERE[🔹 Cohere Embed v3<br/>1024 dimensions]
+            TITAN1[🔹 Titan Text v1|1536 dimensions]
+            TITAN2[🔹 Titan Text v2|1024 dimensions]
+            COHERE[🔹 Cohere Embed v3|1024 dimensions]
         end
         
         subgraph "Generation Models"
-            CLAUDE_H[🧠 Claude 3 Haiku<br/>Fast & Cost-effective]
-            CLAUDE_S[🧠 Claude 3 Sonnet<br/>Balanced Performance]
-            TITAN_P[🧠 Titan Premier<br/>Amazon's Latest]
+            CLAUDE_H[🧠 Claude 3 Haiku|Fast & Cost-effective]
+            CLAUDE_S[🧠 Claude 3 Sonnet|Balanced Performance]
+            TITAN_P[🧠 Titan Premier|Amazon Latest]
         end
     end
 
     %% Data Processing Layer
     subgraph "Data Processing & ML"
-        NLTK[📚 NLTK<br/>Tokenization<br/>Stopwords]
-        SKLEARN[🔬 Scikit-learn<br/>TF-IDF<br/>Cosine Similarity<br/>t-SNE Visualization]
-        NUMPY[🔢 NumPy<br/>Vector Operations]
-        PANDAS[📊 Pandas<br/>Data Manipulation]
-        LANGCHAIN[🔗 LangChain<br/>Semantic Chunking<br/>Prompt Templates]
+        NLTK[📚 NLTK|Tokenization|Stopwords]
+        SKLEARN[🔬 Scikit-learn|TF-IDF|Cosine Similarity|t-SNE Visualization]
+        NUMPY[🔢 NumPy|Vector Operations]
+        PANDAS[📊 Pandas|Data Manipulation]
+        LANGCHAIN[🔗 LangChain|Semantic Chunking|Prompt Templates]
     end
 
     %% Visualization Layer
     subgraph "Visualization & UI"
-        D3[📈 D3.js<br/>Interactive Charts<br/>t-SNE Plots<br/>Similarity Heatmaps]
-        CHARTS[📊 Custom Visualizations<br/>Embedding Space<br/>Chunk Distribution<br/>Score Comparisons]
+        D3[📈 D3.js|Interactive Charts|t-SNE Plots|Similarity Heatmaps]
+        CHARTS[📊 Custom Visualizations|Embedding Space|Chunk Distribution|Score Comparisons]
     end
 
     %% Infrastructure Layer
     subgraph "Infrastructure & Deployment"
         subgraph "Local Development"
-            LOCAL[💻 Local Environment<br/>Node.js 18+<br/>Python 3.8+]
+            LOCAL[💻 Local Environment|Node.js 18+|Python 3.8+]
         end
         
         subgraph "AWS Cloud Deployment"
-            EC2[🖥️ EC2 Instance<br/>t3.medium<br/>Amazon Linux 2]
-            ECS[🐳 ECS Fargate<br/>Containerized<br/>Auto-scaling]
-            LAMBDA[⚡ Lambda Functions<br/>Serverless Backend]
-            APPRUNNER[🚀 App Runner<br/>Managed Deployment]
+            EC2[🖥️ EC2 Instance|t3.medium|Amazon Linux 2]
+            ECS[🐳 ECS Fargate|Containerized|Auto-scaling]
+            LAMBDA[⚡ Lambda Functions|Serverless Backend]
+            APPRUNNER[🚀 App Runner|Managed Deployment]
         end
         
         subgraph "Container Support"
-            DOCKER[🐳 Docker<br/>Multi-stage Builds<br/>Frontend + Backend]
-            COMPOSE[🔧 Docker Compose<br/>Local Orchestration<br/>Nginx Proxy]
+            DOCKER[🐳 Docker|Multi-stage Builds|Frontend + Backend]
+            COMPOSE[🔧 Docker Compose|Local Orchestration|Nginx Proxy]
         end
     end
 
